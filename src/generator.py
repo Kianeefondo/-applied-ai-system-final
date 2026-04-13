@@ -35,7 +35,7 @@ Context:
 
         if self.mode == 'openai':
             try:
-                import openai
+                from openai import OpenAI
             except Exception as e:
                 logger.error('OpenAI SDK not available: %s', e)
                 raise RuntimeError('openai package required for openai mode')
@@ -43,23 +43,19 @@ Context:
             api_key = os.getenv('OPENAI_API_KEY')
             if not api_key:
                 raise RuntimeError('OPENAI_API_KEY environment variable not set')
-            openai.api_key = api_key
 
+            client = OpenAI(api_key=api_key)
             prompt = self._build_prompt(query, contexts)
             try:
-                # Use ChatCompletion if available; calls are wrapped so tests can mock
-                resp = openai.ChatCompletion.create(
+                # Use the new OpenAI client API
+                resp = client.chat.completions.create(
                     model=os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo'),
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=300,
                     temperature=0.0,
                 )
                 # extract text from response
-                if hasattr(resp, 'choices'):
-                    # typical OpenAI response structure
-                    return resp.choices[0].message.content
-                # fallback for other SDK shapes
-                return str(resp)
+                return resp.choices[0].message.content
             except Exception as e:
                 logger.exception('OpenAI request failed: %s', e)
                 return "The external model failed; please try again later."

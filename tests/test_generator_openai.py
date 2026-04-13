@@ -1,34 +1,22 @@
 import os
+from unittest.mock import Mock, patch, MagicMock
 from src.generator import Generator
 
 
-def test_openai_generator_mocked(monkeypatch):
+def test_openai_generator_mocked():
     # Provide a fake API key so the generator doesn't fail on env check
-    monkeypatch.setenv('OPENAI_API_KEY', 'sk-test')
+    with patch.dict(os.environ, {'OPENAI_API_KEY': 'sk-test'}):
+        # Mock the OpenAI client and response
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message = Mock()
+        mock_response.choices[0].message.content = 'Mocked openai response'
 
-    class DummyResp:
-        def __init__(self):
-            self.choices = [type('C', (), {'message': type('M', (), {'content': 'Mocked openai response'})})()]
+        with patch('openai.OpenAI') as mock_openai_class:
+            mock_client = Mock()
+            mock_openai_class.return_value = mock_client
+            mock_client.chat.completions.create.return_value = mock_response
 
-    # monkeypatch the openai.ChatCompletion.create function
-    import types
-    dummy = DummyResp()
-
-    def fake_create(*args, **kwargs):
-        return dummy
-
-    import sys
-    import importlib
-    # create a dummy openai module if not present
-    if 'openai' not in sys.modules:
-        import types as _types
-        openai = _types.ModuleType('openai')
-        sys.modules['openai'] = openai
-        openai.ChatCompletion = types.SimpleNamespace(create=fake_create)
-    else:
-        import openai
-        monkeypatch.setattr(openai.ChatCompletion, 'create', fake_create)
-
-    gen = Generator(mode='openai')
-    res = gen.generate('What is AI?', [('doc1.txt', 'AI stands for artificial intelligence.', 0.9)])
-    assert 'Mocked openai response' in res
+            gen = Generator(mode='openai')
+            res = gen.generate('What is AI?', [('doc1.txt', 'AI stands for artificial intelligence.', 0.9)])
+            assert 'Mocked openai response' in res
