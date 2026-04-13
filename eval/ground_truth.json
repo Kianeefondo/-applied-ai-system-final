@@ -1,0 +1,5 @@
+[
+  {"query": "What is Python used for?", "expected_doc": "doc1_python.txt"},
+  {"query": "Define AI", "expected_doc": "doc2_ai.txt"},
+  {"query": "What is automation used for?", "expected_doc": "doc1_python.txt"}
+]
