@@ -1,4 +1,34 @@
 graph TD
-  A[User] --> B[QAPipeline]
-  B --> C[Retriever]
-  B --> D[Generator]
+  A[User Query] --> B[QAPipeline]
+  
+  B --> C[SimpleRetriever]
+  C --> D["TF-IDF Matching<br/>docs_dir"]
+  D --> E["Retrieved Contexts<br/>top_k=3"]
+  
+  B --> F[Generator]
+  E --> F
+  
+  F --> G{"Generator<br/>Mode?"}
+  G -->|mock| H["Mock Answer<br/>Deterministic"]
+  G -->|openai| I["OpenAI API<br/>ChatCompletion"]
+  I --> J{"API<br/>Success?"}
+  J -->|Yes| K["LLM Response"]
+  J -->|No| L["Graceful Fallback<br/>Error Message"]
+  
+  H --> M["Confidence Score<br/>max_similarity"]
+  K --> M
+  L --> M
+  
+  M --> N["Output Dictionary<br/>query, answer, confidence, retrieved"]
+  N --> O[User Response]
+  
+  N --> P[Evaluation Harness]
+  P --> Q["Ground Truth<br/>Comparison"]
+  Q --> R["Metrics<br/>accuracy, mean_confidence"]
+  
+  style B fill:#4A90E2
+  style C fill:#50C878
+  style F fill:#50C878
+  style M fill:#FFB84D
+  style P fill:#9B59B6
+  style R fill:#E74C3C
